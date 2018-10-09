@@ -2,9 +2,12 @@ var vertexShaderText = [
     'precision mediump float;',
     '',
     'attribute vec2 vertPosition;',
+    'attribute vec3 vertColor;',
+    'varying vec3 fragColor;',
     '',
     'void main()',
     '{',
+    'fragColor = vertColor;',
     ' gl_Position = vec4(vertPosition, 0.0, 1.0);',
     '}'
 ].join('\n');
@@ -12,9 +15,10 @@ var vertexShaderText = [
 var fragmentShaderText = [
     'precision mediump float;',
     '',
+    'varying vec3 fragColor;',
     'void main()',
     '{',
-    ' gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);',
+    ' gl_FragColor = vec4(fragColor, 1.0);',
     '}'
 ].join('\n');
 var InitDemo = function () {
@@ -72,10 +76,10 @@ var InitDemo = function () {
     //
 
     var triangleVertices =
-        [
-            0.0, 0.5,
-            -0.5, -0.5,
-            0.5, -0.5
+        [   // X , Y  RGB
+            0.0, 0.5, 1.0, 1.0, 0.0,
+            -0.5, -0.5, 0.7, 0.0, 1.0,
+            0.5, -0.5, 0.1, 1.0, 0.6
         ];
 
     var triangleVertexBufferObject = gl.createBuffer();
@@ -84,12 +88,29 @@ var InitDemo = function () {
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(triangleVertices), gl.STATIC_DRAW/* this means that it only needs to be updated once */);
 
     var positionAttribLocation = gl.getAttribLocation(program, 'vertPosition');
+    var colorAttibLocation = gl.getAttribLocation(program, 'vertColor');
     gl.vertexAttribPointer(
         positionAttribLocation, // attribute location
-        2, // numver of elemetns per attribute
+        3, // number of elemetns per attribute
         gl.FLOAT, // types of element
         gl.FALSE,
-        2 * Float32Array.BYTES_PER_ELEMENT,// Size of an individual vertex 
-        // Offset from the beginning of a single vertex to this attribute
+        5 * Float32Array.BYTES_PER_ELEMENT,// Size of an individual vertex 
+        0// Offset from the beginning of a single vertex to this attribute
     );
+    gl.vertexAttribPointer(
+        colorAttibLocation, // attribute location
+        3, // number of elemetns per attribute
+        gl.FLOAT, // types of element
+        gl.FALSE,
+        5 * Float32Array.BYTES_PER_ELEMENT,// Size of an individual vertex 
+        2 * Float32Array.BYTES_PER_ELEMENT// Offset from the beginning of a single vertex to this attribute
+    );
+
+    gl.enableVertexAttribArray(positionAttribLocation);
+    gl.enableVertexAttribArray(colorAttibLocation);
+
+    // main renderer 
+
+    gl.useProgram(program);
+    gl.drawArrays(gl.TRIANGLES, 0/*verticesToSkip*/, 3/*verticesToDraw*/);
 };
