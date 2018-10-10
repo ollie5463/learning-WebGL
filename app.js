@@ -25,19 +25,22 @@ var fragmentShaderText = [
     '}'
 ].join('\n');
 var gl;
+
 var InitDemo = function () {
-    console.log('this is working');
+    console.log('This is working');
 
     var canvas = document.getElementById('game-surface');
     gl = canvas.getContext('webgl');
 
     if (!gl) {
+        console.log('WebGL not supported');
         gl = canvas.getContext('experimental-webgl');
     }
 
     if (!gl) {
-        alert('your browser does not support WebGL');
+        alert('Your browser does not support WebGL');
     }
+
     gl.clearColor(0.75, 0.85, 0.8, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
@@ -45,8 +48,9 @@ var InitDemo = function () {
     gl.frontFace(gl.CCW);
     gl.cullFace(gl.BACK);
 
-    // create shaders
     //
+    // Create shaders
+    // 
     var vertexShader = gl.createShader(gl.VERTEX_SHADER);
     var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
 
@@ -54,14 +58,14 @@ var InitDemo = function () {
     gl.shaderSource(fragmentShader, fragmentShaderText);
 
     gl.compileShader(vertexShader);
-
     if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
-        console.error('error compiling vertex shader', gl.getShaderInfoLog(vertexShader));
+        console.error('ERROR compiling vertex shader!', gl.getShaderInfoLog(vertexShader));
         return;
     }
+
     gl.compileShader(fragmentShader);
     if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
-        console.error('error compiling vertex shader', gl.getShaderInfoLog(fragmentShader));
+        console.error('ERROR compiling fragment shader!', gl.getShaderInfoLog(fragmentShader));
         return;
     }
 
@@ -70,19 +74,18 @@ var InitDemo = function () {
     gl.attachShader(program, fragmentShader);
     gl.linkProgram(program);
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-        console.log('error linking program', gl.getProgramInfoLog(program));
+        console.error('ERROR linking program!', gl.getProgramInfoLog(program));
         return;
     }
     gl.validateProgram(program);
     if (!gl.getProgramParameter(program, gl.VALIDATE_STATUS)) {
-        console.log('error validating program', gl.getProgramInfoLog(program));
+        console.error('ERROR validating program!', gl.getProgramInfoLog(program));
         return;
     }
 
     //
-    // create buffer
+    // Create buffer
     //
-
     var boxVertices =
         [ // X, Y, Z           R, G, B
             // Top
@@ -151,39 +154,39 @@ var InitDemo = function () {
 
     var boxVertexBufferObject = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, boxVertexBufferObject);
-    // javascript stores everything in 64 bit but webgl needs it in 32, ergo the function used below
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(boxVertices), gl.STATIC_DRAW/* this means that it only needs to be updated once */);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(boxVertices), gl.STATIC_DRAW);
 
     var boxIndexBufferObject = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, boxIndexBufferObject);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(boxIndices), gl.STATIC_DRAW);
 
     var positionAttribLocation = gl.getAttribLocation(program, 'vertPosition');
-    var colorAttibLocation = gl.getAttribLocation(program, 'vertColor');
+    var colorAttribLocation = gl.getAttribLocation(program, 'vertColor');
     gl.vertexAttribPointer(
-        positionAttribLocation, // attribute location
-        3, // number of elemetns per attribute
-        gl.FLOAT, // types of element
+        positionAttribLocation, // Attribute location
+        3, // Number of elements per attribute
+        gl.FLOAT, // Type of elements
         gl.FALSE,
-        6 * Float32Array.BYTES_PER_ELEMENT,// Size of an individual vertex 
-        0// Offset from the beginning of a single vertex to this attribute
+        6 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
+        0 // Offset from the beginning of a single vertex to this attribute
     );
     gl.vertexAttribPointer(
-        colorAttibLocation, // attribute location
-        3, // number of elemetns per attribute
-        gl.FLOAT, // types of element
+        colorAttribLocation, // Attribute location
+        3, // Number of elements per attribute
+        gl.FLOAT, // Type of elements
         gl.FALSE,
-        6 * Float32Array.BYTES_PER_ELEMENT,// Size of an individual vertex 
-        3 * Float32Array.BYTES_PER_ELEMENT// Offset from the beginning of a single vertex to this attribute
+        6 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
+        3 * Float32Array.BYTES_PER_ELEMENT // Offset from the beginning of a single vertex to this attribute
     );
 
     gl.enableVertexAttribArray(positionAttribLocation);
-    gl.enableVertexAttribArray(colorAttibLocation);
+    gl.enableVertexAttribArray(colorAttribLocation);
 
+    // Tell OpenGL state machine which program should be active.
     gl.useProgram(program);
 
     var matWorldUniformLocation = gl.getUniformLocation(program, 'mWorld');
-    var matViewUniformLocation = gl.getUniformLocation(program, 'view');
+    var matViewUniformLocation = gl.getUniformLocation(program, 'mView');
     var matProjUniformLocation = gl.getUniformLocation(program, 'mProj');
 
     var worldMatrix = new Float32Array(16);
@@ -191,7 +194,7 @@ var InitDemo = function () {
     var projMatrix = new Float32Array(16);
     mat4.identity(worldMatrix);
     mat4.lookAt(viewMatrix, [0, 0, -8], [0, 0, 0], [0, 1, 0]);
-    mat4.perspective(projMatrix, glMatrix.toRadian(45), canvas.width / canvas.height, 0.1, 1000.0);
+    mat4.perspective(projMatrix, glMatrix.toRadian(45), canvas.clientWidth / canvas.clientHeight, 0.1, 1000.0);
 
     gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, worldMatrix);
     gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
@@ -200,19 +203,23 @@ var InitDemo = function () {
     var xRotationMatrix = new Float32Array(16);
     var yRotationMatrix = new Float32Array(16);
 
-    // main renderer loop
+    //
+    // Main render loop
+    //
     var identityMatrix = new Float32Array(16);
     mat4.identity(identityMatrix);
-    var angle = 0;
+    var angle = 1;
     var loop = function () {
-        angle = performance.now() / 1000 / 6 * 2 * Math.PI;
-        mat4.rotate(worldMatrix /*output*/, identityMatrix /*originalMatrix */, angle, [0, 1, 0]/*the axis by which you want to rotate around*/);
-        mat4.rotate(xRotationMatrix, identityMatrix, angle / 4, [1, 0, 0]);
-        gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, worldMatrix);
+        angle += 0.025;
+        mat4.rotate(yRotationMatrix, identityMatrix, angle, [0, 1, 0]);
+        mat4.rotate(xRotationMatrix, identityMatrix, angle, [1, 0, 0]);
         mat4.mul(worldMatrix, yRotationMatrix, xRotationMatrix);
+        gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, worldMatrix);
+
         gl.clearColor(0.75, 0.85, 0.8, 1.0);
         gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
         gl.drawElements(gl.TRIANGLES, boxIndices.length, gl.UNSIGNED_SHORT, 0);
+
         requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
